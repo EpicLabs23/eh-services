@@ -18,6 +18,7 @@ if (isset($_GET['access_token'])) {
     @session_start();
 
     $scope = isset($_GET['scope']) ? $_GET['scope'] : null;
+    setcookie('logout_redirect_url',$_GET['logout_redirect_url']);
     $token = $_GET['access_token'];
     $ehmurl = 'http://host.docker.internal:2326';
 
