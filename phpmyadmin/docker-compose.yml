@@ -18,9 +18,6 @@ services:
     volumes:
      - /sessions
      - ./config.user.inc.php:/etc/phpmyadmin/config.user.inc.php
-    #  - ./signon-script.php:/etc/phpmyadmin/signon-script.php
-    #  - ./signon.php:/etc/phpmyadmin/signon.php
-    #  - ./examples:/var/www/html/examples/
      - ./ehm-authentication:/var/www/html/ehm-authentication/
      - ./theme/:/www/themes/theme/
 networks:
