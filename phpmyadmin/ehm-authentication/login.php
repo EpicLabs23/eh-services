@@ -56,6 +56,7 @@ if (isset($_GET['access_token'])) {
     $dbPass = $apiData['dbPass'];
     $dbHost = $apiData['dbHost'];
     $dbPort = $apiData['dbPort'];
+    $host_verbose = $apiData['host_verbose'];
 
     /* Store there credentials */
     $_SESSION['PMA_single_signon_user'] = $dbUser;
@@ -63,7 +64,7 @@ if (isset($_GET['access_token'])) {
     $_SESSION['PMA_single_signon_host'] = $dbHost;
     $_SESSION['PMA_single_signon_port'] = $dbPort;
     /* Update another field of server configuration */
-    $_SESSION['PMA_single_signon_cfgupdate'] = ['verbose' => 'Signon test'];
+    $_SESSION['PMA_single_signon_cfgupdate'] = ['verbose' => $host_verbose];
     $_SESSION['PMA_single_signon_HMAC_secret'] = hash('sha1', uniqid(strval(random_int(0, mt_getrandmax())), true));
     $id = session_id();
     /* Close that session */
