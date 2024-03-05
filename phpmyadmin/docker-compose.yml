@@ -7,7 +7,7 @@ services:
     environment:
       - PMA_ARBITRARY=1
       - TZ=${TZ:?err}
-      - UPLOAD_LIMIT=900M
+      - UPLOAD_LIMIT=${UPLOAD_LIMIT:?900M}
     ports:
       - '2329:80'
     extra_hosts:
