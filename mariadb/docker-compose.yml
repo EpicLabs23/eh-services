@@ -7,7 +7,6 @@ services:
     restart: unless-stopped
     volumes:
       - './dbdata:/var/lib/mysql'
-      - '/epiclabs23/eh/oneclick-apps:/epiclabs23/eh/oneclick-apps/'
     networks:
       eh_network:
         ipv4_address: 172.1.0.6
