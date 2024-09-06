@@ -1,3 +1,8 @@
+### Disable Ubuntu built-in DNS resolver
+1. Stop the service `service systemd-resolved stop`
+2. Disable the service from startup `service systemd-resolved disable`
+3. Confirm if port 53 is free: `sudo lsof -i :53`
+
 ### Installation:
 1. `cd /epiclabs23/eh/eh-services/dns`
 2. Start docker container:
@@ -12,8 +17,7 @@ docker run -d \
 --restart=always \
 ubuntu/bind9:latest
 ```
-3. Configure Your Local Machine to Use the DNS Server:  `vim /etc/resolv.conf` then add `nameserver 127.0.0.1
-` at the top.
+3. Configure Your Local Machine to Use the DNS Server:  `vim /etc/resolv.conf` then add `nameserver 127.0.0.1` at the top.
 4. Test DNS server: 
 ```bash
 dig @127.0.0.1 www.example.local
