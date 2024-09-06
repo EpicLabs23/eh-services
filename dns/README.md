@@ -1,93 +1,36 @@
-docker build -t eh-dns-server .
-docker run --rm --name dns-server -v ./etc/bind:/etc/bind -p 53:53/udp -p 53:53/tcp eh-dns-server
-
-arbitary phpmyadmin: 172.20.0.2
-
-zone "example.com" {
-    type master;
-    file "/etc/bind/db.example.com";
-};
-
-zone "0.20.172.in-addr.arpa" {
-    type master;
-    file "/etc/bind/db.172.20.0";
-};
-
-
-;
-; BIND data file for example.com
-;
-$TTL    604800
-@       IN      SOA     ns1.example.com. admin.example.com. (
-                        2023091401      ; Serial
-                        604800          ; Refresh
-                        86400           ; Retry
-                        2419200         ; Expire
-                        604800 )        ; Negative Cache TTL
-;
-@       IN      NS      ns1.example.com.
-ns1     IN      A       172.20.0.2
-www     IN      A       172.20.0.2
-
-
-~/bind9/etc/bind/db.172.20.0
-
-;
-; BIND reverse data file for 172.20.0.0/24
-;
-$TTL    604800
-@       IN      SOA     ns1.example.com. admin.example.com. (
-                        2023091401      ; Serial
-                        604800          ; Refresh
-                        86400           ; Retry
-                        2419200         ; Expire
-                        604800 )        ; Negative Cache TTL
-;
-@       IN      NS      ns1.example.com.
-10      IN      PTR     example.com.
-
-
+### Installation:
+1. `cd /epiclabs23/eh/eh-services/dns`
+2. Start docker container:
+```bash
 docker run -d \
-  --name bind9 \
-  -p 53:53/udp \
-  -p 53:53/tcp \
-  -v ~/bind9/etc/bind:/etc/bind \
-  -v ~/bind9/var/cache/bind:/var/cache/bind \
-  --restart=always \
-  ubuntu/bind9:latest
+--name bind9 \
+-p 53:53/udp \
+-p 53:53/tcp \
+-e BIND9_USER=root \
+-v /epiclabs23/eh/eh-services/dns/etc/bind:/etc/bind \
+-v /epiclabs23/eh/eh-services/dns/var/cache/bind:/var/cache/bind \
+--restart=always \
+ubuntu/bind9:latest
+```
+3. Configure Your Local Machine to Use the DNS Server:  `vim /etc/resolv.conf` then add `nameserver 127.0.0.1
+` at the top.
+4. Test DNS server: 
+```bash
+dig @127.0.0.1 www.example.local
+```
+or 
+```bash
+nslookup www.example.local 127.0.0.1
 
-docker run --rm \
-  --name bind9 \
-  -p 53:53/udp \
-  -p 53:53/tcp \
-  -v ~/bind9/etc/bind:/etc/bind \
-  -v ~/bind9/var/cache/bind:/var/cache/bind \
-  ubuntu/bind9:latest
+```
+5. Managing DNS server:
+```bash
+docker stop bind9
+docker start bind9
+docker logs bind9
+```
+6. Settings, forward DNS etc are available in: `./etc/bind/named.conf.options`
 
-
-docker run --rm \
-  --name bind9 \
-  -p 53:53/udp \
-  -p 53:53/tcp \
-  -v ~/bind9/var/cache/bind:/var/cache/bind \
-  ubuntu/bind9:latest
-
-
-  docker run -d \
-  --name bind9 \
-  -p 53:53/udp \
-  -p 53:53/tcp \
-  -e BIND9_USER=root \
-  -v /epiclabs23/eh/eh-services/dns/etc/bind:/etc/bind \
-  -v /epiclabs23/eh/eh-services/dns/var/cache/bind:/var/cache/bind \
-  --restart=always \
-  ubuntu/bind9:latest
-  
-  docker run -d \
-  --name bind9 \
-  -p 53:53/udp \
-  -p 53:53/tcp \
-  -v /epiclabs23/eh/eh-services/dns/etc/bind:/etc/bind \
-  -v /epiclabs23/eh/eh-services/dns/var/cache/bind:/var/cache/bind \
-  --restart=always \
-  ubuntu/bind9:latest
+### Adding a new zone file:
+1. Copy the `db.example.local` file as template, make changes accordingly. for any subdomain add an 'A' entry on this very same file.
+2. update `named.conf.local` with the new zone file.
