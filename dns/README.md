@@ -1,6 +1,7 @@
 ### Disable Ubuntu built-in DNS resolver
 1. Stop the service `service systemd-resolved stop`
-2. Disable the service from startup `service systemd-resolved disable`
+2. Backup existing `/etc/resolv.conf` just for safety. `mv /etc/resolv.conf /etc/resolv.conf.backup`
+2. Disable the service from startup `systemctl disable systemd-resolved`
 3. Confirm if port 53 is free: `sudo lsof -i :53`
 
 ### Installation:
@@ -11,13 +12,20 @@ docker run -d \
 --name bind9 \
 -p 53:53/udp \
 -p 53:53/tcp \
+-e TZ=Asia/Dhaka \
 -e BIND9_USER=root \
 -v /epiclabs23/eh/eh-services/dns/etc/bind:/etc/bind \
 -v /epiclabs23/eh/eh-services/dns/var/cache/bind:/var/cache/bind \
+-v /epiclabs23/eh/eh-services/dns/var/lib/bind:/var/lib/bind \
 --restart=always \
 ubuntu/bind9:latest
 ```
-3. Configure Your Local Machine to Use the DNS Server:  `vim /etc/resolv.conf` then add `nameserver 127.0.0.1` at the top.
+3. Configure Your Local Machine to Use the DNS Server:  `vim /etc/resolv.conf` then add following content
+```bash
+nameserver 127.0.0.1
+search .
+```
+
 4. Test DNS server: 
 ```bash
 dig @127.0.0.1 www.example.local
@@ -36,5 +44,6 @@ docker logs bind9
 6. Settings, forward DNS etc are available in: `./etc/bind/named.conf.options`
 
 ### Adding a new zone file:
-1. Copy the `db.example.local` file as template, make changes accordingly. for any subdomain add an 'A' entry on this very same file.
-2. update `named.conf.local` with the new zone file.
+1. Copy the `db.example.local` file as template, make changes accordingly. 
+2. For any subdomain add an 'A' entry on this very same file.
+2. Update `named.conf.local` with the new zone file.
