@@ -39,6 +39,7 @@ nslookup www.example.local 127.0.0.1
 ```
 5. Managing DNS server:
 ```bash
+docker exec bind9 rndc reload
 docker stop bind9
 docker start bind9
 docker logs bind9

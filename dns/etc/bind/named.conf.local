@@ -11,7 +11,19 @@ zone "example.local" {
     file "/etc/bind/db.example.local";
 };
 
-  zone "newzone.com" {
-      type master;
-      file "/etc/bind/zones/db.newzone.com";
-  };
+  
+zone "newzone2.com" {
+    type master;
+    file "/etc/bind/zones/db.newzone2.com";
+};
+
+zone "toktibanao.com" {
+    type master;
+    file "/etc/bind/zones/db.toktibanao.com";
+};
+
+
+zone "alliswell.com" {
+    type master;
+    file "/etc/bind/zones/db.alliswell.com";
+};
