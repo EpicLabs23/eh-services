@@ -1,2 +1,3 @@
 var/cache/bind
 var/lib/bind
+etc/bind/zones/db.*

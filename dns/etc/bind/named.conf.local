@@ -10,3 +10,8 @@ zone "example.local" {
     type master;
     file "/etc/bind/db.example.local";
 };
+
+  zone "newzone.com" {
+      type master;
+      file "/etc/bind/zones/db.newzone.com";
+  };
