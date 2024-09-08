@@ -23,6 +23,8 @@ ubuntu/bind9:latest
 3. Configure Your Local Machine to Use the DNS Server:  `vim /etc/resolv.conf` then add following content
 ```bash
 nameserver 127.0.0.1
+nameserver 8.8.8.8
+nameserver 45.125.222.158
 search .
 ```
 
@@ -47,3 +49,10 @@ docker logs bind9
 1. Copy the `db.example.local` file as template, make changes accordingly. 
 2. For any subdomain add an 'A' entry on this very same file.
 2. Update `named.conf.local` with the new zone file.
+
+### Debug
+Start built-in DNS: `service systemd-resolved start`
+
+Check status of built-in DNS: `service systemd-resolved status`
+
+Enable the built-in DSN in startup `systemctl disable systemd-resolved`
