@@ -1,8 +1,13 @@
+### Pull the BIND9 docker image before disabling built-in DNS server
+```bash
+docker pull ubuntu/bind9:latest
+```
+
 ### Disable Ubuntu built-in DNS resolver
 1. Stop the service `service systemd-resolved stop`
 2. Backup existing `/etc/resolv.conf` just for safety. `mv /etc/resolv.conf /etc/resolv.conf.backup`
 2. Disable the service from startup `systemctl disable systemd-resolved`
-3. Confirm if port 53 is free: `sudo lsof -i :53`
+3. Confirm if port 53 is free: `sudo lsof -i :53` . this should return nothing.
 
 ### Installation:
 1. `cd /epiclabs23/eh/eh-services/dns`
@@ -56,4 +61,4 @@ Start built-in DNS: `service systemd-resolved start`
 
 Check status of built-in DNS: `service systemd-resolved status`
 
-Enable the built-in DSN in startup `systemctl disable systemd-resolved`
+Enable the built-in DSN in startup `systemctl enable systemd-resolved`
