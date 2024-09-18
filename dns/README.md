@@ -2,6 +2,7 @@
 ```bash
 docker pull ubuntu/bind9:latest
 ```
+Git clone or pull: https://github.com/EpicLabs23/eh-services.git /epiclabs23/eh/eh-services/dns
 
 ### Disable Ubuntu built-in DNS resolver
 1. Stop the service `service systemd-resolved stop`
@@ -44,6 +45,8 @@ nslookup www.example.local 127.0.0.1
 ```
 5. Managing DNS server:
 ```bash
+docker exec bind9 named-checkzone ehm23.com /etc/bind/zones/db.ehm23.com
+docker exec bind9 named-checkzone 57.169.49.103.in-addr.arpa /etc/bind/zones/db.57.169.49.103
 docker exec bind9 rndc reload
 docker stop bind9
 docker start bind9
@@ -62,3 +65,5 @@ Start built-in DNS: `service systemd-resolved start`
 Check status of built-in DNS: `service systemd-resolved status`
 
 Enable the built-in DSN in startup `systemctl enable systemd-resolved`
+
+Copy back the backed up config file: `cp /etc/resolv.conf.backup /etc/resolv.conf`
