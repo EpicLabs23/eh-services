@@ -27,3 +27,9 @@ zone "alliswell.com" {
     type master;
     file "/etc/bind/zones/db.alliswell.com";
 };
+
+
+zone "hellounaisa.com" {
+    type master;
+    file "/etc/bind/zones/db.hellounaisa.com";
+};
