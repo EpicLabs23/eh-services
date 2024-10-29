@@ -4,6 +4,7 @@
 [DNS Black list check](https://www.dnsbl.info/dnsbl-database-check.php)
 [MX Toolbox](https://mxtoolbox.com/SuperTool.aspx)
 [Email Tester](https://www.mail-tester.com/)
+[Install and Configure Mail Server on Ubuntu 22.04 with Postfix, Dovecot and Roundcube](https://www.tuxnoob.com/posts/Install-and-Configure-Mail-Server-ubuntu-part1/)
 
 ### Cheatsheet
 Send a mail:
