@@ -1,0 +1,9 @@
+mail    A       <Mail Server IP>
+@       MX      10 <Mail Server Domain>.
+autodiscover    CNAME   <Mail Server Domain>.
+autoconfig      CNAME   <Mail Server Domain>.
+@       TXT     "v=spf1 mx a -all"
+_dmarc  TXT     "v=DMARC1; p=reject"
+dkim._domainkey TXT     "<dkim_text>"
+_25._tcp.mail    TLSA    3 1 1 e5988e9fa4b01919a6ba97261cefa5d965eb0efec2e57f4e2856c174b1aa2a81
+_autodiscover._tcp   SRV     10 10 443 <Mail Server Domain>.
