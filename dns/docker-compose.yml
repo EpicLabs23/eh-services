@@ -1,0 +1,20 @@
+services:
+  bind9-eh:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: bind9-eh
+    ports:
+      - "53:53/udp"
+      - "53:53/tcp"
+      - "8053:8053" # for Go app
+      - "8054:8054" # for statistics-channels
+    environment:
+      TZ: Asia/Dhaka
+      BIND9_USER: root
+    volumes:
+      - ./etc/bind:/etc/bind
+      - ./var/cache/bind:/var/cache/bind
+      - ./var/lib/bind:/var/lib/bind
+      - ./bind9-rest:/bind9-rest
+    restart: always

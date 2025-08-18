@@ -1,18 +1,26 @@
-# Use an official BIND image or build from a base image
-FROM ubuntu:latest
+FROM ubuntu/bind9:latest
 
-# Install BIND
-RUN apt-get update && apt-get install -y bind9
+ENV DEBIAN_FRONTEND=noninteractive
 
-# Copy configuration files
-# COPY named.conf /etc/bind/named.conf
-# COPY named.conf.local /etc/bind/named.conf.local
-# COPY named.conf.options /etc/bind/named.conf.options
-# COPY db.example.com /etc/bind/db.example.com
+# Install Go + deps
+RUN apt-get update && apt-get install -y \
+    curl git bash \
+    && rm -rf /var/lib/apt/lists/*
 
-# Expose the DNS port
+# Install Go
+ENV GOLANG_VERSION=1.24.3
+RUN curl -OL https://go.dev/dl/go${GOLANG_VERSION}.linux-amd64.tar.gz \
+    && tar -C /usr/local -xzf go${GOLANG_VERSION}.linux-amd64.tar.gz \
+    && rm go${GOLANG_VERSION}.linux-amd64.tar.gz
+
+ENV PATH="/usr/local/go/bin:${PATH}"
+
+# Install Air
+RUN go install github.com/air-verse/air@latest
+ENV PATH="/root/go/bin:${PATH}"
+
+# Keep bind9 default entrypoint & cmd
 EXPOSE 53/udp
 EXPOSE 53/tcp
-
-# Start BIND
-CMD ["named", "-g"]
+EXPOSE 8053/tcp
+EXPOSE 8054/tcp
