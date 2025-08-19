@@ -7,6 +7,12 @@ RUN apt-get update && apt-get install -y \
     curl git bash \
     && rm -rf /var/lib/apt/lists/*
 
+# Install bind9utils
+RUN apt-get update && apt-get install -y bind9utils && rm -rf /var/lib/apt/lists/*
+
+# Install vim
+RUN apt-get update && apt-get install -y vim && rm -rf /var/lib/apt/lists/*
+
 # Install Go
 ENV GOLANG_VERSION=1.24.3
 RUN curl -OL https://go.dev/dl/go${GOLANG_VERSION}.linux-amd64.tar.gz \
