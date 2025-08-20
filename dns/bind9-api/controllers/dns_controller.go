@@ -51,9 +51,20 @@ func (dc *DNSController) CreateZone(c *gin.Context) {
 		return
 	}
 
+	// Reload Bind9 to apply changes
+	stdOut, err := utils.ReloadBind9()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, models.Response{
+			Success: false,
+			Error:   "Failed to reload Bind9: " + err.Error(),
+		})
+		return
+	}
+
 	c.JSON(http.StatusCreated, models.Response{
 		Success: true,
 		Message: "Zone created successfully",
+		Details: stdOut,
 	})
 }
 
@@ -152,9 +163,20 @@ func (dc *DNSController) UpdateZone(c *gin.Context) {
 		return
 	}
 
+	// Reload Bind9 to apply changes
+	stdOut, err := utils.ReloadBind9()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, models.Response{
+			Success: false,
+			Error:   "Failed to reload Bind9: " + err.Error(),
+		})
+		return
+	}
+
 	c.JSON(http.StatusOK, models.Response{
 		Success: true,
 		Message: "Zone updated successfully",
+		Details: stdOut,
 	})
 }
 
@@ -220,9 +242,20 @@ func (dc *DNSController) DeleteZone(c *gin.Context) {
 		return
 	}
 
+	// Reload Bind9 to apply changes
+	stdOut, err := utils.ReloadBind9()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, models.Response{
+			Success: false,
+			Error:   "Failed to reload Bind9: " + err.Error(),
+		})
+		return
+	}
+
 	c.JSON(http.StatusOK, models.Response{
 		Success: true,
 		Message: "Zone deleted successfully",
+		Details: stdOut,
 	})
 }
 
@@ -261,9 +294,20 @@ func (dc *DNSController) AddRecord(c *gin.Context) {
 		return
 	}
 
+	// Reload Bind9 to apply changes
+	stdOut, err := utils.ReloadBind9()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, models.Response{
+			Success: false,
+			Error:   "Failed to reload Bind9: " + err.Error(),
+		})
+		return
+	}
+
 	c.JSON(http.StatusCreated, models.Response{
 		Success: true,
 		Message: "Record added successfully",
+		Details: stdOut,
 	})
 }
 
@@ -311,8 +355,37 @@ func (dc *DNSController) DeleteRecord(c *gin.Context) {
 		return
 	}
 
+	// Reload Bind9 to apply changes
+	stdOut, err := utils.ReloadBind9()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, models.Response{
+			Success: false,
+			Error:   "Failed to reload Bind9: " + err.Error(),
+		})
+		return
+	}
+
 	c.JSON(http.StatusOK, models.Response{
 		Success: true,
 		Message: "Record deleted successfully",
+		Details: stdOut,
+	})
+}
+
+// Add this method to the DNSController in controllers/dns_controller.go
+func (dc *DNSController) ListZones(c *gin.Context) {
+	zones, err := utils.ListZones(dc.Config.Bind9.ZoneFileDir)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, models.Response{
+			Success: false,
+			Error:   err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"zones":   zones,
+		"count":   len(zones),
 	})
 }

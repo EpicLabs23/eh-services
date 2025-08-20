@@ -172,3 +172,27 @@ func RemoveZoneFromConfig(configFile string, zoneName string) error {
 	output := strings.Join(newLines, "\n")
 	return os.WriteFile(configFile, []byte(output), 0644)
 }
+
+// Add this function to utils/bind9_utils.go
+func ListZones(zoneFileDir string) ([]string, error) {
+	var zones []string
+
+	// Check if the directory exists
+	if _, err := os.Stat(zoneFileDir); os.IsNotExist(err) {
+		return zones, nil // Return empty slice if directory doesn't exist
+	}
+
+	files, err := os.ReadDir(zoneFileDir)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, file := range files {
+		if !file.IsDir() && strings.HasSuffix(file.Name(), ".zone") {
+			zoneName := strings.TrimSuffix(file.Name(), ".zone")
+			zones = append(zones, zoneName)
+		}
+	}
+
+	return zones, nil
+}

@@ -23,6 +23,7 @@ func main() {
 	// Routes
 	api := r.Group("/api/v1/zones")
 	{
+		api.GET("/", dnsController.ListZones)
 		api.POST("/", dnsController.CreateZone)
 		api.GET("/:zone", dnsController.GetZone)
 		api.PUT("/:zone", dnsController.UpdateZone)
