@@ -8,6 +8,7 @@ import (
 	"strings"
 	"text/template"
 
+	"bind9-api/config"
 	"bind9-api/models"
 )
 
@@ -195,4 +196,31 @@ func ListZones(zoneFileDir string) ([]string, error) {
 	}
 
 	return zones, nil
+}
+
+func ReloadBind9() (bool, string, error) {
+	return ExecCmd("rndc", "reload")
+}
+
+func CheckAndReload(zoneName string, config *config.Config) (bool, string, error) {
+	// Check zone syntax
+	zoneFilePath := filepath.Join(config.Bind9.ZoneFileDir, zoneName+".zone")
+	success, output, err := ExecCmd("named-checkzone", zoneName, zoneFilePath)
+	if !success {
+		return false, output, fmt.Errorf("zone syntax error: %s", err.Error())
+	}
+
+	// Check config syntax
+	configFile := config.Bind9.ConfigFile
+	success, output, err = ExecCmd("named-checkconf", configFile)
+	if !success {
+		return false, output, fmt.Errorf("config syntax error: %s", err.Error())
+	}
+	// Reload Bind9
+	success, output, err = ExecCmd("rndc", "reload")
+	if !success {
+		return false, output, fmt.Errorf("failed to reload Bind9: %s", err.Error())
+	}
+
+	return success, output, err
 }
