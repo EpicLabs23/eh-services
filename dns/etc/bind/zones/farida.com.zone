@@ -1,0 +1,26 @@
+$ORIGIN farida.com.
+$TTL 3600
+@    IN    SOA    ns1.farida.com. admin.farida.com. (
+            2023081801 ; Serial
+            3600       ; Refresh
+            1800       ; Retry
+            604800     ; Expire
+            86400      ; Minimum TTL
+)
+
+; Name servers
+@    IN    NS    ns1.farida.com.
+@    IN    NS    ns2.farida.com.
+
+; A records
+ns1    IN    A    127.0.0.1
+ns2    IN    A    127.0.0.1
+
+; Additional records
+
+
+sub    IN    A    127.0.0.1
+
+www    IN    A    192.168.1.2
+
+

@@ -8,6 +8,7 @@ type Config struct {
 	Bind9 struct {
 		ZoneFileDir string `mapstructure:"zone_file_dir"`
 		ConfigFile  string `mapstructure:"config_file"`
+		DefaultTTL  uint32 `mapstructure:"default_ttl"`
 	} `mapstructure:"bind9"`
 	Server struct {
 		Port string `mapstructure:"port"`

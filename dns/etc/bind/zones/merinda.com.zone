@@ -1,0 +1,21 @@
+$TTL    86400
+@       IN      SOA     ns1.merinda.com. admin.merinda.com. (
+                        2025081801 ; Serial (YYYYMMDDnn)
+                        3600       ; Refresh
+                        1800       ; Retry
+                        1209600    ; Expire
+                        86400 )    ; Minimum TTL
+
+; Nameservers
+        IN      NS      ns1.merinda.com.
+        IN      NS      ns2.merinda.com.
+
+; A records
+ns1     IN      A       103.49.169.57
+ns2     IN      A       103.49.169.58
+@       IN      A       103.49.169.57
+www     IN      A       103.49.169.57
+
+; MX record
+@       IN      MX 10   mail.merinda.com.
+mail    IN      A       103.49.169.57

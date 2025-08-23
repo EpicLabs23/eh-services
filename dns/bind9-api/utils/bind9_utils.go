@@ -6,7 +6,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"text/template"
 
 	"bind9-api/config"
 	"bind9-api/models"
@@ -44,61 +43,81 @@ func getRecordValue(records []models.Record, rtype string, name string) string {
 	return "127.0.0.1" // default value
 }
 
-func CreateZoneFile(zone models.Zone, zoneFileDir string) error {
-	// Ensure the zone directory exists
-	if err := os.MkdirAll(zoneFileDir, 0755); err != nil {
-		return err
-	}
+// func CreateZoneFile(zone models.Zone, zoneFileDir string) error {
+// 	// Ensure the zone directory exists
+// 	if err := os.MkdirAll(zoneFileDir, 0755); err != nil {
+// 		return err
+// 	}
 
-	// Create the zone file
-	filePath := filepath.Join(zoneFileDir, zone.Name+".zone")
-	file, err := os.Create(filePath)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
+// 	// Create the zone file
+// 	filePath := filepath.Join(zoneFileDir, zone.Name+".zone")
+// 	file, err := os.OpenFile(filePath, os.O_CREATE|os.O_WRONLY, 0644)
+// 	if err != nil {
+// 		return err
+// 	}
+// 	defer file.Close()
 
-	// Add default NS records if not provided
-	hasNS1, hasNS2 := false, false
-	for _, r := range zone.Records {
-		if r.Name == "ns1" && r.Type == "A" {
-			hasNS1 = true
-		}
-		if r.Name == "ns2" && r.Type == "A" {
-			hasNS2 = true
-		}
-	}
+// 	// Read old content to revert in case of syntax error
+// 	oldContent, err := os.ReadFile(filePath)
+// 	if err != nil {
+// 		return err
+// 	}
 
-	if !hasNS1 {
-		zone.Records = append(zone.Records, models.Record{
-			Name:  "ns1",
-			Type:  "A",
-			Value: "127.0.0.1",
-			TTL:   3600,
-		})
-	}
+// 	// Add default NS records if not provided
+// 	hasNS1, hasNS2 := false, false
+// 	for _, r := range zone.Records {
+// 		if r.Name == "ns1" && r.Type == "A" {
+// 			hasNS1 = true
+// 		}
+// 		if r.Name == "ns2" && r.Type == "A" {
+// 			hasNS2 = true
+// 		}
+// 	}
 
-	if !hasNS2 {
-		zone.Records = append(zone.Records, models.Record{
-			Name:  "ns2",
-			Type:  "A",
-			Value: "127.0.0.1",
-			TTL:   3600,
-		})
-	}
+// 	if !hasNS1 {
+// 		zone.Records = append(zone.Records, models.Record{
+// 			Name:  "ns1",
+// 			Type:  "A",
+// 			Value: "127.0.0.1",
+// 			TTL:   3600,
+// 		})
+// 	}
 
-	// Parse and execute the template
-	tmpl := template.New("zonefile").Funcs(template.FuncMap{
-		"getRecordValue": getRecordValue,
-	})
+// 	if !hasNS2 {
+// 		zone.Records = append(zone.Records, models.Record{
+// 			Name:  "ns2",
+// 			Type:  "A",
+// 			Value: "127.0.0.1",
+// 			TTL:   3600,
+// 		})
+// 	}
 
-	tmpl, err = tmpl.Parse(zoneFileTemplate)
-	if err != nil {
-		return err
-	}
+// 	// Parse and execute the template
+// 	tmpl := template.New("zonefile").Funcs(template.FuncMap{
+// 		"getRecordValue": getRecordValue,
+// 	})
 
-	return tmpl.Execute(file, zone)
-}
+// 	tmpl, err = tmpl.Parse(zoneFileTemplate)
+// 	if err != nil {
+// 		return err
+// 	}
+
+// 	// Write zone data to the file
+// 	updatedFile := tmpl.Execute(file, zone)
+
+// 	// Syntax check the zone file
+// 	success, _, err := ExecCmd("named-checkzone", zone.Name, filePath)
+// 	if !success {
+// 		if len(oldContent) == 0 {
+// 			os.Remove(filePath)
+// 		} else {
+// 			os.WriteFile(filePath, oldContent, 0644) // Revert to old content
+// 		}
+// 		return fmt.Errorf("zone syntax error: %s", err.Error())
+// 	}
+
+// 	return updatedFile
+// }
 
 func UpdateZoneConfig(configFile string, zoneName string, zoneFile string) error {
 	// Check if the zone already exists in the config
@@ -121,6 +140,17 @@ func UpdateZoneConfig(configFile string, zoneName string, zoneFile string) error
 		return nil
 	}
 
+	// Read old content to revert in case of syntax error
+	fileInfo, err := file.Stat()
+	if err != nil {
+		return err
+	}
+	oldContent := make([]byte, fileInfo.Size())
+	_, err = file.ReadAt(oldContent, 0)
+	if err != nil {
+		return err
+	}
+
 	// Append the new zone configuration
 	zoneConfig := fmt.Sprintf(`
 zone "%s" {
@@ -130,6 +160,13 @@ zone "%s" {
 
 	if _, err := file.WriteString(zoneConfig); err != nil {
 		return err
+	}
+
+	// Syntax check the zone file
+	success, output, _ := ExecCmd("named-checkconf", configFile)
+	if !success {
+		file.WriteString(string(oldContent)) // Revert to old content;
+		return fmt.Errorf("config syntax error: %s", output)
 	}
 
 	return nil
@@ -201,6 +238,13 @@ func ListZones(zoneFileDir string) ([]string, error) {
 func ReloadBind9() (bool, string, error) {
 	return ExecCmd("rndc", "reload")
 }
+func CheckCofigSyntax(configFile string) (bool, string, error) {
+	success, output, err := ExecCmd("named-checkconf", configFile)
+	if !success {
+		return false, output, fmt.Errorf("config syntax error: %s", err.Error())
+	}
+	return success, output, err
+}
 
 func CheckAndReload(zoneName string, config *config.Config) (bool, string, error) {
 	// Check zone syntax
@@ -211,11 +255,11 @@ func CheckAndReload(zoneName string, config *config.Config) (bool, string, error
 	}
 
 	// Check config syntax
-	configFile := config.Bind9.ConfigFile
-	success, output, err = ExecCmd("named-checkconf", configFile)
+	success, output, err = CheckCofigSyntax(config.Bind9.ConfigFile)
 	if !success {
-		return false, output, fmt.Errorf("config syntax error: %s", err.Error())
+		return false, output, err
 	}
+
 	// Reload Bind9
 	success, output, err = ExecCmd("rndc", "reload")
 	if !success {

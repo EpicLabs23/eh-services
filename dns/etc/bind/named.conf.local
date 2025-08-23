@@ -33,3 +33,17 @@ zone "hellounaisa.com" {
     type master;
     file "/etc/bind/zones/db.hellounaisa.com";
 };
+
+key "mykey" {
+	algorithm hmac-sha256;
+	secret "HVOj9bhJpBqGgPqii1hmT4uQRFIU1q8Z7h/NK/3staM=";
+};
+
+zone "muridan.com" {
+    type master;
+    file "/etc/bind/zones/muridan.com.zone";
+};
+zone "farida.com" {
+    type master;
+    file "/etc/bind/zones/farida.com.zone";
+};

@@ -1,9 +1,26 @@
 package models
 
 type Zone struct {
-	Name    string   `json:"name" binding:"required"`
-	Records []Record `json:"records,omitempty"`
+	Name    string           `json:"name" binding:"required"`
+	TTL     uint32           `json:"ttl,omitempty"`
+	Records []ResourceRecord `json:"records,omitempty"`
 }
+
+type ResourceRecord struct {
+	Name   string            `json:"name"`
+	Type   string            `json:"type"`
+	Class  string            `json:"class"`
+	TTL    uint32            `json:"ttl"`
+	Fields map[string]string `json:"fields"`
+}
+
+// type ResourceRecord struct {
+// 	Name  string `json:"name"`
+// 	Type  string `json:"type"`
+// 	Class string `json:"class"`
+// 	TTL   uint32 `json:"ttl"`
+// 	Data  string `json:"data"`
+// }
 
 type Record struct {
 	Name  string `json:"name" binding:"required"`
