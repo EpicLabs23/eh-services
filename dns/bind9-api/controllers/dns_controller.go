@@ -1,7 +1,6 @@
 package controllers
 
 import (
-	"bufio"
 	"fmt"
 	"net/http"
 	"os"
@@ -88,107 +87,50 @@ func (dc *DNSController) GetZone(c *gin.Context) {
 }
 
 func (dc *DNSController) UpdateZone(c *gin.Context) {
-	// zoneName := c.Param("zone")
-	// var update models.ZoneUpdate
+	zoneName := c.Param("zone")
 
-	// if err := c.ShouldBindJSON(&update); err != nil {
-	// 	c.JSON(http.StatusBadRequest, models.Response{
-	// 		Success: false,
-	// 		Error:   err.Error(),
-	// 	})
-	// 	return
-	// }
+	zoneText := c.PostForm("zone_text")
 
-	// // Get existing zone to preserve SOA and NS records
-	// zoneFilePath := filepath.Join(dc.Config.Bind9.ZoneFileDir, zoneName+".zone")
-	// existingZone, err := dc.getExistingZone(zoneName, zoneFilePath)
-	// if err != nil {
-	// 	c.JSON(http.StatusInternalServerError, models.Response{
-	// 		Success: false,
-	// 		Error:   err.Error(),
-	// 	})
-	// 	return
-	// }
-
-	// // Preserve SOA and NS records from the existing zone
-	// var preservedRecords []models.Record
-	// for _, r := range existingZone.Records {
-	// 	if r.Type == "SOA" || (r.Name == "@" && r.Type == "NS") {
-	// 		preservedRecords = append(preservedRecords, r)
-	// 	}
-	// }
-
-	// // Create a new zone with the preserved records and updated records
-	// updatedZone := models.Zone{
-	// 	Name:    zoneName,
-	// 	Records: append(preservedRecords, update.Records...),
-	// }
-
-	// // Recreate the zone file
-	// if err := utils.CreateZoneFile(updatedZone, dc.Config.Bind9.ZoneFileDir); err != nil {
-	// 	c.JSON(http.StatusInternalServerError, models.Response{
-	// 		Success: false,
-	// 		Error:   err.Error(),
-	// 	})
-	// 	return
-	// }
-
-	// // Reload Bind9 to apply changes
-	// _, stdOut, err := utils.CheckAndReload(zoneName, dc.Config)
-	// if err != nil {
-	// 	c.JSON(http.StatusInternalServerError, models.Response{
-	// 		Success: false,
-	// 		Error:   "Failed to reload Bind9: " + err.Error(),
-	// 	})
-	// 	return
-	// }
-
-	// c.JSON(http.StatusOK, models.Response{
-	// 	Success: true,
-	// 	Message: "Zone updated successfully",
-	// 	Details: stdOut,
-	// })
-}
-
-func (dc *DNSController) getExistingZone(zoneName, zoneFilePath string) (models.Zone, error) {
-	file, err := os.Open(zoneFilePath)
+	zoneFileName := filepath.Join(dc.Config.Bind9.ZoneFileDir, zoneName+".zone")
+	oldContent, err := os.ReadFile(zoneFileName)
 	if err != nil {
-		return models.Zone{}, err
-	}
-	defer file.Close()
-
-	scanner := bufio.NewScanner(file)
-	var records []models.ResourceRecord
-
-	for scanner.Scan() {
-		line := strings.TrimSpace(scanner.Text())
-		if line == "" || strings.HasPrefix(line, ";") || strings.HasPrefix(line, "$") {
-			continue
-		}
-
-		parts := strings.Fields(line)
-		if len(parts) < 4 {
-			continue
-		}
-
-		record := models.ResourceRecord{
-			Name:  parts[0],
-			TTL:   3600, // Default TTL
-			Type:  parts[2],
-			Class: parts[3],
-		}
-
-		if record.Name == "@" {
-			record.Name = zoneName
-		}
-
-		records = append(records, record)
+		c.JSON(http.StatusInternalServerError, models.Response{
+			Success: false,
+			Error:   err.Error(),
+		})
+		return
 	}
 
-	return models.Zone{
-		Name:    zoneName,
-		Records: records,
-	}, nil
+	err = os.WriteFile(zoneFileName, []byte(zoneText), 0644)
+	if err != nil {
+		if len(oldContent) == 0 {
+			os.Remove(zoneFileName)
+		} else {
+			os.WriteFile(zoneFileName, oldContent, 0644) // Revert to old content
+		}
+		c.JSON(http.StatusInternalServerError, models.Response{
+			Success: false,
+			Error:   err.Error(),
+		})
+		return
+	}
+
+	// Reload Bind9 to apply changes
+	_, stdOut, err := utils.CheckAndReload(zoneName, dc.Config)
+	if err != nil {
+		os.WriteFile(zoneFileName, oldContent, 0644) // Revert to old content
+		c.JSON(http.StatusInternalServerError, models.Response{
+			Success: false,
+			Error:   "Failed to reload Bind9: " + err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, models.Response{
+		Success: true,
+		Message: "Zone updated successfully",
+		Details: stdOut,
+	})
 }
 
 func (dc *DNSController) DeleteZone(c *gin.Context) {
@@ -230,116 +172,122 @@ func (dc *DNSController) DeleteZone(c *gin.Context) {
 }
 
 func (dc *DNSController) AddRecord(c *gin.Context) {
-	// zoneName := c.Param("zone")
-	// var record models.Record
+	zoneName := c.Param("zone")
+	var record models.ResourceRecord
 
-	// if err := c.ShouldBindJSON(&record); err != nil {
-	// 	c.JSON(http.StatusBadRequest, models.Response{
-	// 		Success: false,
-	// 		Error:   err.Error(),
-	// 	})
-	// 	return
-	// }
+	if err := c.ShouldBindJSON(&record); err != nil {
+		c.JSON(http.StatusBadRequest, models.Response{
+			Success: false,
+			Error:   err.Error(),
+		})
+		return
+	}
 
-	// // Get existing zone
-	// zoneFilePath := filepath.Join(dc.Config.Bind9.ZoneFileDir, zoneName+".zone")
-	// zone, err := dc.getExistingZone(zoneName, zoneFilePath)
-	// if err != nil {
-	// 	c.JSON(http.StatusInternalServerError, models.Response{
-	// 		Success: false,
-	// 		Error:   err.Error(),
-	// 	})
-	// 	return
-	// }
+	rrStr := utils.MakeRRString(record)
+	if rrStr == "" {
+		c.JSON(http.StatusBadRequest, models.Response{
+			Success: false,
+			Error:   "Invalid record format",
+		})
+		return
+	}
 
-	// // Add new record
-	// zone.Records = append(zone.Records, record)
+	// Get existing zone
+	zoneFilePath := filepath.Join(dc.Config.Bind9.ZoneFileDir, zoneName+".zone")
+	oldContent, _ := os.ReadFile(zoneFilePath)
+	parsedZone, err := utils.ParseZoneFile(zoneFilePath, zoneName)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, models.Response{
+			Success: false,
+			Error:   err.Error(),
+		})
+		return
+	}
+	parsedZone = append(parsedZone, record)
+	updatedZone := models.Zone{
+		Name:    zoneName,
+		Records: parsedZone,
+	}
+	utils.WriteZoneFile(updatedZone, dc.Config)
 
-	// // Recreate the zone file
-	// if err := utils.CreateZoneFile(zone, dc.Config.Bind9.ZoneFileDir); err != nil {
-	// 	c.JSON(http.StatusInternalServerError, models.Response{
-	// 		Success: false,
-	// 		Error:   err.Error(),
-	// 	})
-	// 	return
-	// }
+	// Reload Bind9 to apply changes
+	_, stdOut, err := utils.CheckAndReload(zoneName, dc.Config)
+	if err != nil {
+		os.WriteFile(zoneFilePath, oldContent, 0644)
+		c.JSON(http.StatusInternalServerError, models.Response{
+			Success: false,
+			Error:   "Failed to reload Bind9: " + err.Error(),
+		})
+		return
+	}
 
-	// // Reload Bind9 to apply changes
-	// _, stdOut, err := utils.CheckAndReload(zoneName, dc.Config)
-	// if err != nil {
-	// 	c.JSON(http.StatusInternalServerError, models.Response{
-	// 		Success: false,
-	// 		Error:   "Failed to reload Bind9: " + err.Error(),
-	// 	})
-	// 	return
-	// }
-
-	// c.JSON(http.StatusCreated, models.Response{
-	// 	Success: true,
-	// 	Message: "Record added successfully",
-	// 	Details: stdOut,
-	// })
+	c.JSON(http.StatusCreated, models.Response{
+		Success: true,
+		Message: "Record added successfully",
+		Details: stdOut,
+	})
 }
 
 func (dc *DNSController) DeleteRecord(c *gin.Context) {
-	// zoneName := c.Param("zone")
-	// recordName := c.Param("record")
-	// recordType := c.Param("type")
+	zoneName := c.Param("zone")
+	recordName := c.Param("record")
+	recordType := c.Param("type")
 
-	// // Get existing zone
-	// zoneFilePath := filepath.Join(dc.Config.Bind9.ZoneFileDir, zoneName+".zone")
-	// zone, err := dc.getExistingZone(zoneName, zoneFilePath)
-	// if err != nil {
-	// 	c.JSON(http.StatusInternalServerError, models.Response{
-	// 		Success: false,
-	// 		Error:   err.Error(),
-	// 	})
-	// 	return
-	// }
+	// Get existing zone
+	zoneFilePath := filepath.Join(dc.Config.Bind9.ZoneFileDir, zoneName+".zone")
+	oldContent, _ := os.ReadFile(zoneFilePath)
+	parsedZone, err := utils.ParseZoneFile(zoneFilePath, zoneName)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, models.Response{
+			Success: false,
+			Error:   err.Error(),
+		})
+		return
+	}
 
-	// // Filter out the record to delete
-	// var updatedRecords []models.Record
-	// for _, r := range zone.Records {
-	// 	if r.Name == recordName && r.Type == recordType {
-	// 		continue
-	// 	}
-	// 	updatedRecords = append(updatedRecords, r)
-	// }
+	// Filter out the record to delete
+	var updatedZone []models.ResourceRecord
+	for _, r := range parsedZone {
+		if !strings.HasSuffix(recordName, ".") {
+			recordName += "."
+		}
 
-	// if len(updatedRecords) == len(zone.Records) {
-	// 	c.JSON(http.StatusNotFound, models.Response{
-	// 		Success: false,
-	// 		Error:   "Record not found",
-	// 	})
-	// 	return
-	// }
+		if r.Name == recordName && r.Type == recordType {
+			continue
+		}
+		updatedZone = append(updatedZone, r)
+	}
 
-	// zone.Records = updatedRecords
+	if len(updatedZone) == len(parsedZone) {
+		c.JSON(http.StatusNotFound, models.Response{
+			Success: false,
+			Error:   "Record not found",
+		})
+		return
+	}
 
-	// // Recreate the zone file
-	// if err := utils.CreateZoneFile(zone, dc.Config.Bind9.ZoneFileDir); err != nil {
-	// 	c.JSON(http.StatusInternalServerError, models.Response{
-	// 		Success: false,
-	// 		Error:   err.Error(),
-	// 	})
-	// 	return
-	// }
+	parsedZone = updatedZone
+	utils.WriteZoneFile(models.Zone{
+		Name:    zoneName,
+		Records: parsedZone,
+	}, dc.Config)
 
-	// // Reload Bind9 to apply changes
-	// _, stdOut, err := utils.CheckAndReload(zoneName, dc.Config)
-	// if err != nil {
-	// 	c.JSON(http.StatusInternalServerError, models.Response{
-	// 		Success: false,
-	// 		Error:   "Failed to reload Bind9: " + err.Error(),
-	// 	})
-	// 	return
-	// }
+	// Reload Bind9 to apply changes
+	_, stdOut, err := utils.CheckAndReload(zoneName, dc.Config)
+	if err != nil {
+		os.WriteFile(zoneFilePath, oldContent, 0644)
+		c.JSON(http.StatusInternalServerError, models.Response{
+			Success: false,
+			Error:   "Failed to reload Bind9: " + err.Error(),
+		})
+		return
+	}
 
-	// c.JSON(http.StatusOK, models.Response{
-	// 	Success: true,
-	// 	Message: "Record deleted successfully",
-	// 	Details: stdOut,
-	// })
+	c.JSON(http.StatusOK, models.Response{
+		Success: true,
+		Message: "Record deleted successfully",
+		Details: stdOut,
+	})
 }
 
 // Add this method to the DNSController in controllers/dns_controller.go

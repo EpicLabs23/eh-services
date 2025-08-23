@@ -1,0 +1,14 @@
+$ORIGIN kindly.com.
+$TTL 3600
+
+kindly.com.	3600	IN	SOA	ns1.kindly.com. admin.kindly.com. 2023081801 3600 1800 604800 86400
+kindly.com.	3600	IN	NS	ns1.kindly.com.
+kindly.com.	3600	IN	NS	ns2.kindly.com.
+ns1.kindly.com.	3600	IN	A	127.0.0.1
+ns2.kindly.com.	3600	IN	A	127.0.0.1
+sub.kindly.com.	3600	IN	A	127.0.0.1
+tizara.kindly.com.	3600	IN	A	127.0.0.1
+www.kindly.com.	3600	IN	A	192.168.1.2
+salakala.	3600	IN	A	127.0.0.1
+volavala.	3600	IN	A	127.0.0.1
+vala.	3600	IN	A	127.0.0.1

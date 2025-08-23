@@ -47,3 +47,7 @@ zone "farida.com" {
     type master;
     file "/etc/bind/zones/farida.com.zone";
 };
+zone "kindly.com" {
+    type master;
+    file "/etc/bind/zones/kindly.com.zone";
+};
