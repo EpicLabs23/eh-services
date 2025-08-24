@@ -29,4 +29,3 @@ ENV PATH="/root/go/bin:${PATH}"
 EXPOSE 53/udp
 EXPOSE 53/tcp
 EXPOSE 8053/tcp
-EXPOSE 8054/tcp
