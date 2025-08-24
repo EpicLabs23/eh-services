@@ -290,7 +290,6 @@ func (dc *DNSController) DeleteRecord(c *gin.Context) {
 	})
 }
 
-// Add this method to the DNSController in controllers/dns_controller.go
 func (dc *DNSController) ListZones(c *gin.Context) {
 	zones, err := utils.ListZones(dc.Config.Bind9.ZoneFileDir)
 	if err != nil {

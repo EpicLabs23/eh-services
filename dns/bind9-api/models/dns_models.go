@@ -14,23 +14,11 @@ type ResourceRecord struct {
 	Fields map[string]string `json:"fields"`
 }
 
-// type ResourceRecord struct {
-// 	Name  string `json:"name"`
-// 	Type  string `json:"type"`
-// 	Class string `json:"class"`
-// 	TTL   uint32 `json:"ttl"`
-// 	Data  string `json:"data"`
-// }
-
 type Record struct {
 	Name  string `json:"name" binding:"required"`
 	Type  string `json:"type" binding:"required"`
 	Value string `json:"value" binding:"required"`
 	TTL   int    `json:"ttl"`
-}
-
-type ZoneUpdate struct {
-	Records []Record `json:"records" binding:"required"`
 }
 
 type Response struct {
@@ -40,7 +28,6 @@ type Response struct {
 	Details string `json:"details,omitempty"`
 }
 
-// Add this struct to models/dns_models.go
 type ZoneListResponse struct {
 	Success bool     `json:"success"`
 	Zones   []string `json:"zones"`

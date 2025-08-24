@@ -43,82 +43,6 @@ func getRecordValue(records []models.Record, rtype string, name string) string {
 	return "127.0.0.1" // default value
 }
 
-// func CreateZoneFile(zone models.Zone, zoneFileDir string) error {
-// 	// Ensure the zone directory exists
-// 	if err := os.MkdirAll(zoneFileDir, 0755); err != nil {
-// 		return err
-// 	}
-
-// 	// Create the zone file
-// 	filePath := filepath.Join(zoneFileDir, zone.Name+".zone")
-// 	file, err := os.OpenFile(filePath, os.O_CREATE|os.O_WRONLY, 0644)
-// 	if err != nil {
-// 		return err
-// 	}
-// 	defer file.Close()
-
-// 	// Read old content to revert in case of syntax error
-// 	oldContent, err := os.ReadFile(filePath)
-// 	if err != nil {
-// 		return err
-// 	}
-
-// 	// Add default NS records if not provided
-// 	hasNS1, hasNS2 := false, false
-// 	for _, r := range zone.Records {
-// 		if r.Name == "ns1" && r.Type == "A" {
-// 			hasNS1 = true
-// 		}
-// 		if r.Name == "ns2" && r.Type == "A" {
-// 			hasNS2 = true
-// 		}
-// 	}
-
-// 	if !hasNS1 {
-// 		zone.Records = append(zone.Records, models.Record{
-// 			Name:  "ns1",
-// 			Type:  "A",
-// 			Value: "127.0.0.1",
-// 			TTL:   3600,
-// 		})
-// 	}
-
-// 	if !hasNS2 {
-// 		zone.Records = append(zone.Records, models.Record{
-// 			Name:  "ns2",
-// 			Type:  "A",
-// 			Value: "127.0.0.1",
-// 			TTL:   3600,
-// 		})
-// 	}
-
-// 	// Parse and execute the template
-// 	tmpl := template.New("zonefile").Funcs(template.FuncMap{
-// 		"getRecordValue": getRecordValue,
-// 	})
-
-// 	tmpl, err = tmpl.Parse(zoneFileTemplate)
-// 	if err != nil {
-// 		return err
-// 	}
-
-// 	// Write zone data to the file
-// 	updatedFile := tmpl.Execute(file, zone)
-
-// 	// Syntax check the zone file
-// 	success, _, err := ExecCmd("named-checkzone", zone.Name, filePath)
-// 	if !success {
-// 		if len(oldContent) == 0 {
-// 			os.Remove(filePath)
-// 		} else {
-// 			os.WriteFile(filePath, oldContent, 0644) // Revert to old content
-// 		}
-// 		return fmt.Errorf("zone syntax error: %s", err.Error())
-// 	}
-
-// 	return updatedFile
-// }
-
 func UpdateZoneConfig(configFile string, zoneName string, zoneFile string) error {
 	// Check if the zone already exists in the config
 	file, err := os.OpenFile(configFile, os.O_RDWR, 0644)
@@ -211,7 +135,6 @@ func RemoveZoneFromConfig(configFile string, zoneName string) error {
 	return os.WriteFile(configFile, []byte(output), 0644)
 }
 
-// Add this function to utils/bind9_utils.go
 func ListZones(zoneFileDir string) ([]string, error) {
 	var zones []string
 
