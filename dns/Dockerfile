@@ -2,30 +2,19 @@ FROM ubuntu/bind9:latest
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Install Go + deps
-RUN apt-get update && apt-get install -y \
-    curl git bash \
+# Install dependencies
+RUN apt-get update && apt-get install -y curl supervisor \
     && rm -rf /var/lib/apt/lists/*
 
-# Install bind9utils
-RUN apt-get update && apt-get install -y bind9utils && rm -rf /var/lib/apt/lists/*
+# Install bind9-api
+RUN curl -sSL https://raw.githubusercontent.com/EpicLabs23/bind9-api/refs/heads/main/install.sh | bash -s 0.1.0 no-systemd
 
-# Install vim
-RUN apt-get update && apt-get install -y vim && rm -rf /var/lib/apt/lists/*
+# Create supervisord config
+RUN mkdir -p /etc/supervisor/conf.d
+COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
-# Install Go
-ENV GOLANG_VERSION=1.24.3
-RUN curl -OL https://go.dev/dl/go${GOLANG_VERSION}.linux-amd64.tar.gz \
-    && tar -C /usr/local -xzf go${GOLANG_VERSION}.linux-amd64.tar.gz \
-    && rm go${GOLANG_VERSION}.linux-amd64.tar.gz
+# Expose DNS + API ports
+EXPOSE 53/udp 53/tcp 8053/tcp
 
-ENV PATH="/usr/local/go/bin:${PATH}"
-
-# Install Air
-RUN go install github.com/air-verse/air@latest
-ENV PATH="/root/go/bin:${PATH}"
-
-# Keep bind9 default entrypoint & cmd
-EXPOSE 53/udp
-EXPOSE 53/tcp
-EXPOSE 8053/tcp
+# Start supervisor (which runs both bind9 & bind9-api)
+CMD ["/usr/bin/supervisord", "-n", "-c", "/etc/supervisor/conf.d/supervisord.conf"]

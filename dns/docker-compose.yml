@@ -3,7 +3,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: bind9-eh
+    container_name: bind9-api
     ports:
       - "53:53/udp"
       - "53:53/tcp"
@@ -15,6 +15,4 @@ services:
       - ./etc/bind:/etc/bind
       - ./var/cache/bind:/var/cache/bind
       - ./var/lib/bind:/var/lib/bind
-      - ./bind9-rest:/bind9-rest
-      - ./bind9-api:/bind9-api
     restart: always
