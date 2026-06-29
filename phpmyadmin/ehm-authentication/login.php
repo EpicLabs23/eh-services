@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 $curl = curl_init();
@@ -18,7 +19,7 @@ if (isset($_GET['access_token'])) {
     @session_start();
 
     $scope = isset($_GET['scope']) ? $_GET['scope'] : null;
-    setcookie('logout_redirect_url',$_GET['logout_redirect_url']);
+    setcookie('logout_redirect_url', $_GET['logout_redirect_url']);
     $token = $_GET['access_token'];
     $ehmurl = 'http://host.docker.internal:2326';
 
@@ -47,10 +48,13 @@ if (isset($_GET['access_token'])) {
 
     $apiResponse = curl_exec($curl);
 
+    // var_dump($apiResponse);
+    // die;
+
     curl_close($curl);
 
     $apiData = json_decode($apiResponse, true);
-// var_dump($apiData);die;
+    // var_dump($apiData);die;
 
     $dbUser = $apiData['dbUser'];
     $dbPass = $apiData['dbPass'];
