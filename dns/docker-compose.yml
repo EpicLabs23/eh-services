@@ -7,7 +7,16 @@ services:
     ports:
       - "53:53/udp"
       - "53:53/tcp"
-      - "8053:8053" # for Go app
+      # 53/udp+tcp stay published to all interfaces - DNS resolution has to
+      # be reachable from the public internet for customer domains to
+      # resolve, that's the whole point of this service. 8053 is different:
+      # it's the Bind9 management REST API (BasicAuth-gated, credential
+      # stored via ehm-api's eh-config - see ecp-mysql... no, bind9-api
+      # section of docs/SECURITY_CHECKLIST.md), only ever called by ehm-api
+      # on this same host, so it never needed public exposure - restricting
+      # it is defense in depth on top of the BasicAuth check that already
+      # gates it.
+      - "127.0.0.1:8053:8053" # for Go app (ehm-api, localhost-only)
     environment:
       TZ: Asia/Dhaka
       BIND9_USER: root

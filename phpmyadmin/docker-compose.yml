@@ -4,9 +4,25 @@ services:
     container_name: ehm-phpmyadmin
     restart: unless-stopped
     environment:
-      - PMA_ARBITRARY=1
+      # Was PMA_ARBITRARY=1 - lets phpMyAdmin's own login form connect to
+      # *any* MySQL host the visitor types in, not just the pre-configured
+      # server. Removed: the real access path here is ehm-authentication's
+      # signon flow (login.php), which always supplies the exact host/user/
+      # password programmatically via ehm-api's /account/mysqlcred -
+      # arbitrary-server entry was never needed for that and only expanded
+      # what an attacker who reaches phpMyAdmin directly (bypassing the
+      # signon redirect) could attempt to connect to.
       - TZ=${TZ:?err}
       - UPLOAD_LIMIT=${UPLOAD_LIMIT:?900M}
+    # NOTE: left published to all interfaces deliberately, unlike the other
+    # eh-services fixes in this pass - phpMyAdmin's UI is meant to be opened
+    # directly in a staff/account member's own browser after the signon
+    # redirect (login.php), so restricting this to 127.0.0.1 would break
+    # that flow rather than just removing unnecessary exposure. The real
+    # gate here is the signon auth itself (see ehm-authentication/login.php)
+    # - if you want defense in depth beyond that, the next step would be an
+    # IP allowlist or a proper reverse-proxy/WAF in front of this port,
+    # which is a bigger change than this pass covers.
     ports:
       - '2329:80'
     extra_hosts:

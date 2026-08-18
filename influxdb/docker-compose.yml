@@ -3,8 +3,13 @@ services:
     image: influxdb:3-core
     container_name: influxdb
     restart: unless-stopped
+    # Previously published to all interfaces (0.0.0.0:8181) - only ehm-api's
+    # resource-monitor collectors, running on this same host, ever query it
+    # (INFLUXDB_HOST=http://localhost:8181 in ehm-api's .env already), so
+    # restricting the bind address doesn't require any application-side
+    # change. See docs/SECURITY_CHECKLIST.md in ehm-api.
     ports:
-      - '8181:8181'
+      - '127.0.0.1:8181:8181'
     volumes:
       - './data:/var/lib/influxdb3/data'
       - './plugins:/var/lib/influxdb3/plugins'

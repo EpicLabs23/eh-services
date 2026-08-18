@@ -3,5 +3,15 @@ services:
     image: redis:7-alpine
     container_name: ehm-redis-container
     restart: unless-stopped
+    # Previously published to all interfaces (0.0.0.0:6379) with no
+    # password - reachable from the public internet with full read/write
+    # access to refresh tokens, the JWT revocation list, and login-lockout
+    # counters (see docs/SECURITY_CHECKLIST.md in ehm-api). Only ehm-api,
+    # running on this same host, ever needs to reach it - ehm-api already
+    # connects via REDIS_HOST=localhost (.env), so restricting the bind
+    # address doesn't require any application-side change. requirepass adds
+    # defense in depth on top of that (protects against any other process
+    # on the host, not just remote attackers).
     ports:
-      - "6379:6379"
+      - "127.0.0.1:6379:6379"
+    command: redis-server --requirepass ${REDIS_PASSWORD:?err}
