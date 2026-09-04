@@ -16,15 +16,24 @@ set -uo pipefail
 MAX_HEAL_ATTEMPTS="${INFLUXDB_HEAL_MAX_ATTEMPTS:-3}"
 
 data_dir=""
+node_id=""
 args=("$@")
 for i in "${!args[@]}"; do
   case "${args[$i]}" in
     --data-dir=*) data_dir="${args[$i]#--data-dir=}" ;;
     --data-dir) data_dir="${args[$((i + 1))]:-}" ;;
+    --node-id=*) node_id="${args[$i]#--node-id=}" ;;
+    --node-id) node_id="${args[$((i + 1))]:-}" ;;
   esac
 done
 data_dir="${data_dir:-${INFLUXDB3_DATA_DIR:-/var/lib/influxdb3/data}}"
 data_dir_resolved="$(readlink -f -- "$data_dir")"
+
+# influxdb3 stores everything under data-dir/<node-id>/... (its "prefix") and names files in
+# error output the same way, e.g. `path=ehm-influxdb/wal/00000024877.wal` — so a bare
+# `data-dir/wal/...` guess misses. Try the node-id-prefixed location first, then the bare one.
+candidate_dirs=("$data_dir")
+[[ -n "$node_id" ]] && candidate_dirs=("${data_dir}/${node_id}" "$data_dir")
 
 log() { echo "[influxdb-heal] $*"; }
 
@@ -80,16 +89,26 @@ while :; do
       ;;
   esac
 
-  target="${data_dir}/${file_rel}"
-  resolved="$(readlink -f -- "$target" 2>/dev/null || true)"
+  resolved=""
+  for dir in "${candidate_dirs[@]}"; do
+    target="${dir}/${file_rel}"
+    candidate_resolved="$(readlink -f -- "$target" 2>/dev/null || true)"
 
-  if [[ -z "$resolved" || "$resolved" != "$data_dir_resolved"/* ]]; then
-    log "refusing to delete '${target}' — resolves outside the data directory"
-    exit "$status"
-  fi
+    if [[ -z "$candidate_resolved" || "$candidate_resolved" != "$data_dir_resolved"/* ]]; then
+      log "refusing to consider '${target}' — resolves outside the data directory"
+      continue
+    fi
 
-  if [[ ! -e "$resolved" ]]; then
-    log "output named '${file_rel}' but it no longer exists on disk — nothing to delete"
+    if [[ -e "$candidate_resolved" ]]; then
+      resolved="$candidate_resolved"
+      break
+    fi
+  done
+
+  if [[ -z "$resolved" ]]; then
+    tried=""
+    for dir in "${candidate_dirs[@]}"; do tried="${tried}${dir}/${file_rel}, "; done
+    log "output named '${file_rel}' but no matching file was found on disk (tried: ${tried%, }) — nothing to delete"
     exit "$status"
   fi
 
