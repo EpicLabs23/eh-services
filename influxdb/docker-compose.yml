@@ -13,6 +13,13 @@ services:
     volumes:
       - './data:/var/lib/influxdb3/data'
       - './plugins:/var/lib/influxdb3/plugins'
+      - './heal-entrypoint.sh:/usr/local/bin/heal-entrypoint.sh:ro'
+    # Wraps the image's own entrypoint so a single corrupted wal/ or dbs/ file left by an
+    # unclean shutdown (host crash, power loss) gets deleted and retried automatically
+    # instead of crash-looping forever. See heal-entrypoint.sh and
+    # docs/eh-services/install-influxdb.md in eh-documentation for what it does and doesn't touch.
+    entrypoint:
+      - /usr/local/bin/heal-entrypoint.sh
     command:
       - influxdb3
       - serve
