@@ -1,6 +1,12 @@
 services:
   mongodb:
-    image: mongo:latest
+    # Pinned, not `latest` - live-tested 2026-09-05: `mongo:latest` (8.x)
+    # refuses to start on kernel 6.19+ ("MongoDB cannot start: Linux kernel
+    # versions 6.19 and newer has a known incompatibility with this
+    # version of MongoDB", SERVER-121912). 6.0 starts clean on the same
+    # host/kernel. Bump deliberately, re-testing against the target
+    # kernel, rather than following `latest` forward.
+    image: mongo:6.0
     container_name: mongodb
     restart: unless-stopped
     volumes:
