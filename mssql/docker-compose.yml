@@ -1,0 +1,31 @@
+services:
+  mssql:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: mssql
+    restart: unless-stopped
+    volumes:
+      - 'mssql-data:/var/opt/mssql'
+    networks:
+      eh_network:
+        ipv4_address: 172.1.0.10
+    # Same host as EHM (the default): EHM reaches this via the eh_network
+    # bridge IP above, not this published port, so MSSQL_BIND_ADDRESS can
+    # stay 127.0.0.1 - the port is only for local CLI access.
+    # Separate instance from EHM: the eh_network bridge above is host-local
+    # and EHM has no route into it, so this published port is the ONLY way
+    # EHM reaches MSSQL - set MSSQL_BIND_ADDRESS to this host's LAN IP (or
+    # 0.0.0.0), open MSSQL_PORT to just the EHM host's IP via your
+    # firewall, and set MSSQL_IP in ehm-api/.env to this host's real LAN
+    # IP, not 172.1.0.10. See install-mssql.md.
+    ports:
+      - '${MSSQL_BIND_ADDRESS:-127.0.0.1}:${MSSQL_PORT:-1433}:1433'
+    environment:
+      - ACCEPT_EULA=Y
+      - MSSQL_SA_PASSWORD=${MSSQL_SA_PASSWORD:?err}
+      - MSSQL_PID=Express
+volumes:
+  mssql-data:
+networks:
+  eh_network:
+    external: true
+    name: eh_network

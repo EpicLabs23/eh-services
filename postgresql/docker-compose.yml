@@ -1,0 +1,29 @@
+services:
+  postgresql:
+    image: postgres:${POSTGRES_VERSION:-18}
+    container_name: postgresql
+    restart: unless-stopped
+    volumes:
+      - '${PGDATA_HOST:?err}:/var/lib/postgresql/${POSTGRES_VERSION:-18}/docker'
+    networks:
+      eh_network:
+        ipv4_address: 172.1.0.8
+    # Same host as EHM (the default): EHM reaches this via the eh_network
+    # bridge IP above, not this published port, so POSTGRES_BIND_ADDRESS
+    # can stay 127.0.0.1 - the port is only for local CLI access.
+    # Separate instance from EHM: the eh_network bridge above is host-local
+    # and EHM has no route into it, so this published port is the ONLY way
+    # EHM reaches Postgres - set POSTGRES_BIND_ADDRESS to this host's LAN
+    # IP (or 0.0.0.0), open POSTGRES_PORT to just the EHM host's IP via
+    # your firewall, and set POSTGRES_IP in ehm-api/.env to this host's
+    # real LAN IP, not 172.1.0.8. See install-postgresql.md.
+    ports:
+      - '${POSTGRES_BIND_ADDRESS:-127.0.0.1}:${POSTGRES_PORT:-5432}:5432'
+    environment:
+      - POSTGRES_USER=${POSTGRES_SUPER_USER:?err}
+      - POSTGRES_PASSWORD=${POSTGRES_SUPER_USER_PASSWORD:?err}
+      - PGDATA=/var/lib/postgresql/${POSTGRES_VERSION:-18}/docker
+networks:
+  eh_network:
+    external: true
+    name: eh_network

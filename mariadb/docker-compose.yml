@@ -10,6 +10,17 @@ services:
     networks:
       eh_network:
         ipv4_address: 172.1.0.6
+    # Same host as EHM (the default): EHM reaches this via the eh_network
+    # bridge IP above, not this published port, so MARIADB_BIND_ADDRESS
+    # can stay 127.0.0.1 - the port is only for local CLI access.
+    # Separate instance from EHM: the eh_network bridge above is host-local
+    # and EHM has no route into it, so this published port is the ONLY way
+    # EHM reaches MariaDB - set MARIADB_BIND_ADDRESS to this host's LAN IP
+    # (or 0.0.0.0), open MARIADB_PORT to just the EHM host's IP via your
+    # firewall, and set MYSQL_HOST in ehm-api/.env to this host's real LAN
+    # IP, not 172.1.0.6. See install-mariadb.md.
+    ports:
+      - '${MARIADB_BIND_ADDRESS:-127.0.0.1}:${MARIADB_PORT:-3306}:3306'
     environment:
       - MARIADB_ROOT_PASSWORD=${MARIADB_ROOT_PASSWORD:?err}
       - MARIADB_USER=${MARIADB_USER:?err}
