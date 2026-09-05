@@ -5,6 +5,15 @@ services:
     restart: unless-stopped
     volumes:
       - 'mssql-data:/var/opt/mssql'
+      # Bind-mounted (not part of the mssql-data named volume) so ehm-api,
+      # running directly on this host, can read a BACKUP DATABASE ...
+      # output file straight off disk to stream into storage.bd, and write
+      # a restored snapshot back for RESTORE DATABASE to read - see
+      # ehm-api's mssql-backup.service.ts. Only works when MSSQL runs on
+      # the same host as EHM (a Docker bind mount can't span two hosts) -
+      # on a separate instance, MSSQL backup/restore is unsupported for
+      # now (see install-mssql.md).
+      - './backup:/var/opt/mssql/backup'
     networks:
       eh_network:
         ipv4_address: 172.1.0.10
