@@ -4,7 +4,7 @@ services:
     container_name: postgresql
     restart: unless-stopped
     volumes:
-      - '${PGDATA_HOST:?err}:/var/lib/postgresql/${POSTGRES_VERSION:-18}/docker'
+      - 'postgres-data:/var/lib/postgresql/${POSTGRES_VERSION:-18}/docker'
     networks:
       eh_network:
         ipv4_address: 172.1.0.8
@@ -23,6 +23,8 @@ services:
       - POSTGRES_USER=${POSTGRES_SUPER_USER:?err}
       - POSTGRES_PASSWORD=${POSTGRES_SUPER_USER_PASSWORD:?err}
       - PGDATA=/var/lib/postgresql/${POSTGRES_VERSION:-18}/docker
+volumes:
+  postgres-data:
 networks:
   eh_network:
     external: true
