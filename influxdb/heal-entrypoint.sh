@@ -59,6 +59,17 @@ while :; do
   child_pid=""
   sleep 0.3 # let the tee'd copy in $out catch up with the last lines before we grep it
 
+  # influxdb3 can log a fatal WAL error and then shut itself down "gracefully" (exit 0)
+  # instead of crashing — e.g. a stale WAL file left by an unclean shutdown gets tolerated
+  # during replay (WARN, skipped) but then collides with AlreadyExists the moment a real
+  # write tries to reuse that file number. Treat that as a failure so it still gets healed,
+  # instead of taking the exit-0 shortcut below and leaving the stale file for the next
+  # write to hit again.
+  if [[ "$status" -eq 0 ]] && grep -q "invoking shutdown after attempt to persist a WAL file that already exists" "$out"; then
+    log "influxdb3 exited 0 but logged a fatal WAL persist error before shutting down — treating as a failure so it gets healed"
+    status=1
+  fi
+
   if [[ "$status" -eq 0 ]]; then
     rm -f "$out"
     exit 0
