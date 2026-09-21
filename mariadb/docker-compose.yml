@@ -4,6 +4,13 @@ services:
     image: nahidacm/eh-mariadb:11.5.2
     container_name: ehm-db-container
     restart: unless-stopped
+    # Caps the default json-file driver's growth - previously unbounded.
+    # See ehm-api/docs/CLEANUP_POLICY.md's "Follow-on work" section.
+    logging:
+      driver: json-file
+      options:
+        max-size: '10m'
+        max-file: '3'
     volumes:
       - './dbdata:/var/lib/mysql'
       - '/epiclabs23/eh/oneclick-apps/sql-files:/epiclabs23/eh/oneclick-apps/sql-files'

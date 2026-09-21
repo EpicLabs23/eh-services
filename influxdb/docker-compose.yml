@@ -3,6 +3,13 @@ services:
     image: influxdb:3-core
     container_name: influxdb
     restart: unless-stopped
+    # Caps the default json-file driver's growth - previously unbounded.
+    # See ehm-api/docs/CLEANUP_POLICY.md's "Follow-on work" section.
+    logging:
+      driver: json-file
+      options:
+        max-size: '10m'
+        max-file: '3'
     # Previously published to all interfaces (0.0.0.0:8181) - only ehm-api's
     # resource-monitor collectors, running on this same host, ever query it
     # (INFLUXDB_HOST=http://localhost:8181 in ehm-api's .env already), so

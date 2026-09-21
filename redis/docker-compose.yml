@@ -3,6 +3,13 @@ services:
     image: redis:7-alpine
     container_name: ehm-redis-container
     restart: unless-stopped
+    # Caps the default json-file driver's growth - previously unbounded.
+    # See ehm-api/docs/CLEANUP_POLICY.md's "Follow-on work" section.
+    logging:
+      driver: json-file
+      options:
+        max-size: '10m'
+        max-file: '3'
     # Previously published to all interfaces (0.0.0.0:6379) with no
     # password - reachable from the public internet with full read/write
     # access to refresh tokens, the JWT revocation list, and login-lockout

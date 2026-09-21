@@ -3,6 +3,13 @@ services:
     image: 'phpmyadmin/phpmyadmin:latest'
     container_name: ehm-phpmyadmin
     restart: unless-stopped
+    # Caps the default json-file driver's growth - previously unbounded.
+    # See ehm-api/docs/CLEANUP_POLICY.md's "Follow-on work" section.
+    logging:
+      driver: json-file
+      options:
+        max-size: '10m'
+        max-file: '3'
     environment:
       # Was PMA_ARBITRARY=1 - lets phpMyAdmin's own login form connect to
       # *any* MySQL host the visitor types in, not just the pre-configured

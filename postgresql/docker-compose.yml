@@ -3,6 +3,13 @@ services:
     image: postgres:${POSTGRES_VERSION:-18}
     container_name: postgresql
     restart: unless-stopped
+    # Caps the default json-file driver's growth - previously unbounded.
+    # See ehm-api/docs/CLEANUP_POLICY.md's "Follow-on work" section.
+    logging:
+      driver: json-file
+      options:
+        max-size: '10m'
+        max-file: '3'
     volumes:
       - 'postgres-data:/var/lib/postgresql/${POSTGRES_VERSION:-18}/docker'
     networks:

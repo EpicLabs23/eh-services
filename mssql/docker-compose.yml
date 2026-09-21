@@ -3,6 +3,13 @@ services:
     image: mcr.microsoft.com/mssql/server:2022-latest
     container_name: mssql
     restart: unless-stopped
+    # Caps the default json-file driver's growth - previously unbounded.
+    # See ehm-api/docs/CLEANUP_POLICY.md's "Follow-on work" section.
+    logging:
+      driver: json-file
+      options:
+        max-size: '10m'
+        max-file: '3'
     volumes:
       - 'mssql-data:/var/opt/mssql'
       # Bind-mounted (not part of the mssql-data named volume) so ehm-api,
