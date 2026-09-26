@@ -1,0 +1,71 @@
+# Templated at container start by nginx:alpine's built-in envsubst-on-
+# templates mechanism (/etc/nginx/templates/*.template -> /etc/nginx/conf.d).
+# Only the shared-secret env var (curly-brace form, below) is substituted -
+# the entrypoint restricts envsubst to the container's actual env var names
+# in that form, so every plain $nginx_variable below (single dollar, no
+# braces) is left untouched. Deliberately not spelling that variable's name
+# with a leading $ anywhere else in this file, including in comments -
+# envsubst doesn't know what a comment is, it just replaces every matching
+# occurrence in the raw file, so writing it again up here would leak the
+# real secret value into this comment in the rendered config, same as it
+# briefly did during testing. See ehm-api/docs/PGADMIN.md for the full design.
+server {
+    listen 80;
+
+    # Bootstrap hop: validates the ECP access_token against EHM, then makes
+    # the one request into pgAdmin that carries the trusted identity header,
+    # triggering pgAdmin's webserver-auth auto-create+login and establishing
+    # its own session cookie in the browser. Every later request goes
+    # straight through the plain proxy below on that cookie alone - no need
+    # to re-validate the token on every click.
+    location = /ehm-signon {
+        auth_request /internal-validate;
+        auth_request_set $pgadmin_user $upstream_http_x_pgadmin_user;
+
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Ehm-Pgadmin-User $pgadmin_user;
+        proxy_set_header X-Ehm-Pgadmin-Secret "${PGADMIN_SHARED_SECRET}";
+        proxy_pass http://172.1.0.9/;
+    }
+
+    # Internal-only - never reachable directly by a client (auth_request
+    # subrequests are exempt from that restriction). Forwards the
+    # access_token query param as a Bearer token to EHM's
+    # GET /account/pgadmin-signon, which validates it via the normal
+    # JWT/permission guard and returns the resolved pgAdmin identity in the
+    # X-Pgadmin-User response header for auth_request_set above to read.
+    #
+    # The token is read from $request_uri, not $arg_access_token - an
+    # auth_request subrequest gets its own, separate request object with
+    # empty args of its own, so $arg_access_token (and any attempt to
+    # forward it by appending "?$args" to the `auth_request` directive
+    # itself) is always empty/broken inside this location - confirmed
+    # empirically: the latter makes nginx literally percent-escape the "?"
+    # into the outgoing upstream path and never substitutes $args at all.
+    # $request_uri is different: it always reflects the original client
+    # request's full URI+query, even inside an internally-redirected
+    # subrequest, which is exactly what's needed here.
+    location = /internal-validate {
+        internal;
+        if ($request_uri ~ "[?&]access_token=([^&]+)") {
+            set $signon_token $1;
+        }
+        proxy_pass_request_body off;
+        proxy_set_header Content-Length "";
+        proxy_set_header Authorization "Bearer $signon_token";
+        proxy_pass http://host.docker.internal:2326/account/pgadmin-signon;
+    }
+
+    # Everything else: pgAdmin's own session cookie (set via /ehm-signon
+    # above) gates access from here on, same as any reverse-proxied Flask
+    # app - no header/secret needed on ordinary browsing. Reaching this
+    # without ever hitting /ehm-signon first just shows pgAdmin's normal
+    # login page, which none of these auto-created accounts have a
+    # password for - no bypass.
+    location / {
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_pass http://172.1.0.9/;
+    }
+}

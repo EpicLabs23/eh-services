@@ -1,0 +1,94 @@
+services:
+  pgadmin:
+    # Pinned, not :latest - the tree-filtering patches mounted below
+    # (patches/*.sql) overwrite pgAdmin's own internal SQL template files at
+    # this exact version's file paths/content. An image bump must
+    # re-diff each patch against the new version's stock file before
+    # updating this tag - see docs/PGADMIN.md.
+    image: dpage/pgadmin4:9.16
+    container_name: ehm-pgadmin
+    restart: unless-stopped
+    # Caps the default json-file driver's growth - previously unbounded.
+    # See ehm-api/docs/CLEANUP_POLICY.md's "Follow-on work" section.
+    logging:
+      driver: json-file
+      options:
+        max-size: '10m'
+        max-file: '3'
+    environment:
+      # Bootstrap superuser for pgAdmin's own internal login page - only
+      # relevant if a staff member opens pgadmin-nginx's port directly and
+      # signs in by hand (e.g. to inspect auto-created accounts under User
+      # Management). No ECP account ever uses this; they only ever arrive
+      # via /ehm-signon - see docs/PGADMIN.md.
+      - PGADMIN_DEFAULT_EMAIL=${PGADMIN_DEFAULT_EMAIL:?err}
+      - PGADMIN_DEFAULT_PASSWORD=${PGADMIN_DEFAULT_PASSWORD:?err}
+      - PGADMIN_CONFIG_SERVER_MODE=True
+      - PGADMIN_CONFIG_AUTHENTICATION_SOURCES=['webserver']
+      - PGADMIN_CONFIG_WEBSERVER_AUTO_CREATE_USER=True
+      - PGADMIN_CONFIG_WEBSERVER_REMOTE_USER_FROM_HEADER=True
+      # Confirmed working against pgAdmin 9.16 (the pinned version above) -
+      # pgAdmin's own docs/community reports disagreed across versions on
+      # whether this needed to be the raw header name instead
+      # ('X-Ehm-Pgadmin-User'); re-verify if the pinned version above ever
+      # changes. See docs/PGADMIN.md.
+      - PGADMIN_CONFIG_WEBSERVER_REMOTE_USER='HTTP_X_EHM_PGADMIN_USER'
+      - PGADMIN_CONFIG_WEBSERVER_TRUSTED_PROXIES=['172.1.0.11']
+      - PGADMIN_CONFIG_WEBSERVER_SHARED_SECRET='${PGADMIN_SHARED_SECRET:?err}'
+      - PGADMIN_CONFIG_WEBSERVER_SHARED_SECRET_HEADER='X-Ehm-Pgadmin-Secret'
+    # Deliberately no `ports:` - pgadmin-nginx (below) is the only container
+    # allowed to reach this one. pgAdmin's webserver-auth trust model means
+    # any client that could reach it directly and set the identity header
+    # would be able to impersonate any account - see docs/PGADMIN.md.
+    networks:
+      eh_network:
+        ipv4_address: 172.1.0.9
+    volumes:
+      - pgadmin-data:/var/lib/pgadmin
+      # Tree-filtering patches (see docs/PGADMIN.md's "Cross-tenant metadata
+      # visibility" section) - overwrite pgAdmin's own internal SQL template
+      # files so the Databases/Login-Group-Roles tree only ever lists what
+      # the connected role can actually use, instead of every database/role
+      # on the shared server. A cosmetic fix only: REVOKE CONNECT (already
+      # in place, docs/DB_TOPOLOGY.md) is what actually blocks cross-tenant
+      # access - anyone still sees everything via the Query Tool
+      # (`SELECT datname FROM pg_database`), which is expected and accepted.
+      - ./patches/databases-nodes.sql:/pgadmin4/pgadmin/browser/server_groups/servers/databases/templates/databases/sql/default/nodes.sql:ro
+      - ./patches/roles-nodes.sql:/pgadmin4/pgadmin/browser/server_groups/servers/roles/templates/roles/sql/default/nodes.sql:ro
+
+  pgadmin-nginx:
+    image: nginx:alpine
+    container_name: ehm-pgadmin-nginx
+    restart: unless-stopped
+    depends_on:
+      - pgadmin
+    logging:
+      driver: json-file
+      options:
+        max-size: '10m'
+        max-file: '3'
+    environment:
+      # Consumed by nginx:alpine's built-in envsubst-on-templates mechanism
+      # (see nginx.conf.template) - must match pgadmin's
+      # PGADMIN_CONFIG_WEBSERVER_SHARED_SECRET above exactly.
+      - PGADMIN_SHARED_SECRET=${PGADMIN_SHARED_SECRET:?err}
+    # The only externally reachable port in this whole stack - see
+    # nginx.conf.template for why that's safe (pgadmin's own port above is
+    # never published) and install-pgadmin.md for picking a free port.
+    ports:
+      - '2331:80'
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - ./nginx.conf.template:/etc/nginx/templates/default.conf.template:ro
+    networks:
+      eh_network:
+        ipv4_address: 172.1.0.11
+
+volumes:
+  pgadmin-data:
+
+networks:
+  eh_network:
+    external: true
+    name: eh_network
