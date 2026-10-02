@@ -1,1 +1,6 @@
 dns/bind9-api/tmp
+
+# Environment files (keep samples tracked)
+.env
+.env.*
+!.env.sample
