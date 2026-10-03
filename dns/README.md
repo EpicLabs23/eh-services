@@ -1,3 +1,5 @@
+Full guide: https://docs.ecpanel.io/eh-services/install-bind9-dns
+
 ### Pull the BIND9 docker image before disabling built-in DNS server
 
 ```bash
@@ -40,7 +42,7 @@ docker compose up -d
 ```bash
 nameserver 127.0.0.1
 nameserver 8.8.8.8
-nameserver 45.125.222.158
+nameserver 1.1.1.1
 search .
 ```
 
@@ -60,12 +62,10 @@ nslookup www.example.local 127.0.0.1
 5. Managing DNS server:
 
 ```bash
-docker exec bind9 named-checkzone ehm23.com /etc/bind/zones/db.ehm23.com
-docker exec bind9 named-checkzone 57.169.49.103.in-addr.arpa /etc/bind/zones/db.57.169.49.103
-docker exec bind9 rndc reload
-docker stop bind9
-docker start bind9
-docker logs bind9
+docker exec bind9-eh named-checkzone <zone> /etc/bind/zones/db.<zone>
+docker exec bind9-eh rndc reload
+docker compose restart
+docker logs bind9-eh
 ```
 
 6. Settings, forward DNS etc are available in: `./etc/bind/named.conf.options`
