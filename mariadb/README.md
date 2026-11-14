@@ -1,4 +1,4 @@
 ## Installation
 See [https://github.com/EpicLabs23/eh-services](https://github.com/EpicLabs23/eh-services)
 ## Usage
-Directly hit on browser: http://localhost:2329/?user_token=test-toket&user=root&password=drootp&host=172.1.0.6&port=3306
+phpMyAdmin is no longer published on a host port. It is served over TLS on `https://<account primary domain>:2329` by the host nginx (EHM generates the vhost). For direct local debugging, use the container address: http://172.1.0.5/

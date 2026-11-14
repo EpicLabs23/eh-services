@@ -7,8 +7,8 @@ $curl = curl_init();
 if (isset($_GET['access_token'])) {
     /* Use cookies for session */
     ini_set('session.use_cookies', 'true');
-    /* Change this to true if using phpMyAdmin over https */
-    $secureCookie = false;
+    /* phpMyAdmin is only served over https (host nginx, port 2329) */
+    $secureCookie = true;
     /* Need to have cookie visible from parent directory */
     session_set_cookie_params(0, '/', '', $secureCookie, true);
     /* Create signon session */

@@ -36,6 +36,9 @@ services:
       - PGADMIN_CONFIG_WEBSERVER_TRUSTED_PROXIES=['172.1.0.11']
       - PGADMIN_CONFIG_WEBSERVER_SHARED_SECRET='${PGADMIN_SHARED_SECRET:?err}'
       - PGADMIN_CONFIG_WEBSERVER_SHARED_SECRET_HEADER='X-Ehm-Pgadmin-Secret'
+      # Only ever reached over TLS now (host nginx, port 2331), so the
+      # session cookie never needs to travel over plain HTTP.
+      - PGADMIN_CONFIG_SESSION_COOKIE_SECURE=True
     # Deliberately no `ports:` - pgadmin-nginx (below) is the only container
     # allowed to reach this one. pgAdmin's webserver-auth trust model means
     # any client that could reach it directly and set the identity header
@@ -72,11 +75,12 @@ services:
       # (see nginx.conf.template) - must match pgadmin's
       # PGADMIN_CONFIG_WEBSERVER_SHARED_SECRET above exactly.
       - PGADMIN_SHARED_SECRET=${PGADMIN_SHARED_SECRET:?err}
-    # The only externally reachable port in this whole stack - see
-    # nginx.conf.template for why that's safe (pgadmin's own port above is
-    # never published) and install-pgadmin.md for picking a free port.
-    ports:
-      - '2331:80'
+    # Deliberately no `ports:`. The host's nginx serves this sidecar over
+    # TLS on 2331 for each account's primary domain (EHM's
+    # DbToolsVhostService, see ehm-api docs/NGINX.md), proxying to
+    # 172.1.0.11:80. It used to be published as plain HTTP on 0.0.0.0:2331.
+    # After `docker compose up -d` here, restart EHM (or POST
+    # /nginx/db-tools/sync) so nginx takes the port.
     extra_hosts:
       - "host.docker.internal:host-gateway"
     volumes:

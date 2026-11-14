@@ -12,6 +12,10 @@
 server {
     listen 80;
 
+    # Reached through the host nginx's TLS vhost on 2331, which sends
+    # Host with the port ($http_host) - keep it, so any absolute redirect
+    # pgAdmin builds points back at :2331, not :80.
+
     # Bootstrap hop: validates the ECP access_token against EHM, then makes
     # the one request into pgAdmin that carries the trusted identity header,
     # triggering pgAdmin's webserver-auth auto-create+login and establishing
@@ -22,7 +26,7 @@ server {
         auth_request /internal-validate;
         auth_request_set $pgadmin_user $upstream_http_x_pgadmin_user;
 
-        proxy_set_header Host $host;
+        proxy_set_header Host $http_host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Ehm-Pgadmin-User $pgadmin_user;
         proxy_set_header X-Ehm-Pgadmin-Secret "${PGADMIN_SHARED_SECRET}";
@@ -64,7 +68,7 @@ server {
     # login page, which none of these auto-created accounts have a
     # password for - no bypass.
     location / {
-        proxy_set_header Host $host;
+        proxy_set_header Host $http_host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_pass http://172.1.0.9/;
     }

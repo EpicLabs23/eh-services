@@ -21,17 +21,14 @@ services:
       # signon redirect) could attempt to connect to.
       - TZ=${TZ:?err}
       - UPLOAD_LIMIT=${UPLOAD_LIMIT:?900M}
-    # NOTE: left published to all interfaces deliberately, unlike the other
-    # eh-services fixes in this pass - phpMyAdmin's UI is meant to be opened
-    # directly in a staff/account member's own browser after the signon
-    # redirect (login.php), so restricting this to 127.0.0.1 would break
-    # that flow rather than just removing unnecessary exposure. The real
-    # gate here is the signon auth itself (see ehm-authentication/login.php)
-    # - if you want defense in depth beyond that, the next step would be an
-    # IP allowlist or a proper reverse-proxy/WAF in front of this port,
-    # which is a bigger change than this pass covers.
-    ports:
-      - '2329:80'
+    # Deliberately no `ports:`. The host's nginx serves phpMyAdmin over TLS
+    # on 2329 for each account's primary domain (EHM's DbToolsVhostService,
+    # see ehm-api docs/NGINX.md) and proxies to 172.1.0.5:80 below. It used
+    # to be published as plain HTTP on 0.0.0.0:2329, which broke on
+    # HSTS-preloaded domains (.dev, .app, ...) and sent the ECP sign-on token
+    # in clear text. nginx can't take 2329 while Docker still holds it, so
+    # after `docker compose up -d` here, restart EHM (or POST
+    # /nginx/db-tools/sync) to bring the vhosts up.
     extra_hosts:
       - "host.docker.internal:host-gateway"
     networks:
